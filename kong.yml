@@ -1,0 +1,138 @@
+# Kong — API gateway do Supabase (self-hosted)
+# Roteia os prefixos padrao do @supabase/supabase-js para os servicos internos.
+#   /auth/v1/*  -> auth (GoTrue)   com strip_path
+#   /rest/v1/*  -> rest (PostgREST) com strip_path
+#   /pg/*       -> meta (postgres-meta)
+#   /           -> redirect para /rest/v1/ (documentacao OpenAPI)
+#
+# O strip_path remove o prefixo antes de mandar ao backend, que e o que o
+# GoTrue e o PostgREST esperam (servem em /signup e /tabela, respectivamente).
+#
+# Sem key-auth: o cliente envia o header `apikey` e o `Authorization: Bearer <jwt>`,
+# que sao validados pelo proprio backend. O Kong so e um reverse proxy.
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: auth-v1
+    url: http://auth:9999/
+    routes:
+      - name: auth-v1
+        strip_path: true
+        paths:
+          - /auth/v1
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - X-Client-Info
+            - X-Client-IP
+            - X-Forwarded-For
+            - Range
+            - Prefer
+            - X-Search-Client-Info
+            - X-Search-Sort
+          exposed_headers:
+            - Content-Encoding
+            - Content-Length
+            - Content-Range
+            - X-Supabase-Api-Version
+          credentials: true
+          max_age: 3600
+          preflight_continue: true
+
+  - name: rest-v1
+    url: http://rest:3000/
+    routes:
+      - name: rest-v1
+        strip_path: true
+        paths:
+          - /rest/v1
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+            - X-Client-Info
+            - X-Client-IP
+            - X-Forwarded-For
+            - Range
+            - Prefer
+            - X-Search-Client-Info
+            - X-Search-Sort
+            - Accept-Profile
+            - Content-Profile
+            - Accept-Ranges
+          exposed_headers:
+            - Content-Encoding
+            - Content-Length
+            - Content-Range
+            - X-Supabase-Api-Version
+          credentials: true
+          max_age: 3600
+          preflight_continue: true
+
+  - name: pg-meta
+    url: http://meta:8080/
+    routes:
+      - name: pg-meta
+        strip_path: true
+        paths:
+          - /pg
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+            - HEAD
+          headers:
+            - Authorization
+            - Content-Type
+            - apikey
+          exposed_headers:
+            - Content-Encoding
+            - Content-Length
+          credentials: true
+          max_age: 3600
+          preflight_continue: true
+
+  # Raiz: serve o OpenAPI/Swagger do PostgREST direto (util pra debug)
+  - name: root
+    url: http://rest:3000/
+    routes:
+      - name: root
+        strip_path: false
+        paths:
+          - /

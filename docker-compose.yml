@@ -16,6 +16,9 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data:Z
       - ./initdb.d:/docker-entrypoint-initdb.d:ro
+    ports:
+      # bind so no loopback: acesso via SSH tunnel, nunca exposto na internet
+      - "127.0.0.1:5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -70,15 +73,6 @@ services:
       - traefik.http.routers.supa-auth.middlewares=supa-redirect
       - traefik.http.services.supa-auth.loadbalancer.server.port=9999
       - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
-      - traefik.enable=true
-      - traefik.http.routers.supa-auth.rule=Host(`auth.cabratech.cloud`)
-      - traefik.http.routers.supa-auth.entrypoints=http,https
-      - traefik.http.routers.supa-auth.service=supa-auth
-      - traefik.http.routers.supa-auth.tls=true
-      - traefik.http.routers.supa-auth.tls.certresolver=letsencrypt
-      - traefik.http.routers.supa-auth.middlewares=redirect-to-https
-      - traefik.http.services.supa-auth.loadbalancer.server.port=9999
-
   rest:
     image: postgrest/postgrest:v12.2.12
     container_name: supabase-${COOLIFY_RESOURCE_UUID:-prod}-rest
@@ -98,23 +92,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=gyg7sosa0cexivvtqxvrojnu
-      - traefik.http.routers.supa-api.rule=Host(`api.cabratech.cloud`)
-      - traefik.http.routers.supa-api.entrypoints=http,https
-      - traefik.http.routers.supa-api.service=supa-api
-      - traefik.http.routers.supa-api.tls=true
-      - traefik.http.routers.supa-api.tls.certresolver=letsencrypt
-      - traefik.http.routers.supa-api.middlewares=supa-redirect
-      - traefik.http.services.supa-api.loadbalancer.server.port=3000
       - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
-      - traefik.enable=true
-      - traefik.http.routers.supa-api.rule=Host(`api.cabratech.cloud`)
-      - traefik.http.routers.supa-api.entrypoints=http,https
-      - traefik.http.routers.supa-api.service=supa-api
-      - traefik.http.routers.supa-api.tls=true
-      - traefik.http.routers.supa-api.tls.certresolver=letsencrypt
-      - traefik.http.routers.supa-api.middlewares=redirect-to-https
-      - traefik.http.services.supa-api.loadbalancer.server.port=3000
-
   meta:
     image: supabase/postgres-meta:v0.89.0
     container_name: supabase-${COOLIFY_RESOURCE_UUID:-prod}-meta
@@ -174,14 +152,39 @@ services:
       - traefik.http.routers.supa-studio.middlewares=supa-redirect
       - traefik.http.services.supa-studio.loadbalancer.server.port=3000
       - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
+  kong:
+    image: kong:3.9
+    container_name: supabase-${COOLIFY_RESOURCE_UUID:-prod}-kong
+    restart: unless-stopped
+    depends_on:
+      auth:
+        condition: service_started
+      rest:
+        condition: service_started
+      meta:
+        condition: service_started
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    volumes:
+      - ./kong.yml:/kong/kong.yml:ro
+    networks:
+      - supabase-prod-net
+    labels:
       - traefik.enable=true
-      - traefik.http.routers.supa-studio.rule=Host(`studio.cabratech.cloud`)
-      - traefik.http.routers.supa-studio.entrypoints=http,https
-      - traefik.http.routers.supa-studio.service=supa-studio
-      - traefik.http.routers.supa-studio.tls=true
-      - traefik.http.routers.supa-studio.tls.certresolver=letsencrypt
-      - traefik.http.routers.supa-studio.middlewares=redirect-to-https
-      - traefik.http.services.supa-studio.loadbalancer.server.port=3000
+      - traefik.docker.network=gyg7sosa0cexivvtqxvrojnu
+      - traefik.http.routers.supa-api.rule=Host(`api.cabratech.cloud`)
+      - traefik.http.routers.supa-api.entrypoints=http,https
+      - traefik.http.routers.supa-api.service=supa-api
+      - traefik.http.routers.supa-api.tls=true
+      - traefik.http.routers.supa-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-api.middlewares=supa-redirect
+      - traefik.http.services.supa-api.loadbalancer.server.port=8000
+      - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
 
 volumes:
   db-data:
@@ -189,3 +192,14 @@ volumes:
 networks:
   supabase-prod-net:
     driver: bridge
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=gyg7sosa0cexivvtqxvrojnu
+      - traefik.http.routers.supa-studio.rule=Host(`studio.cabratech.cloud`)
+      - traefik.http.routers.supa-studio.entrypoints=http,https
+      - traefik.http.routers.supa-studio.service=supa-studio
+      - traefik.http.routers.supa-studio.tls=true
+      - traefik.http.routers.supa-studio.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-studio.middlewares=supa-redirect
+      - traefik.http.services.supa-studio.loadbalancer.server.port=3000
+      - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
