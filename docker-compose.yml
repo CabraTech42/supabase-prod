@@ -59,6 +59,15 @@ services:
       - "9998:9999"
     networks:
       - supabase-prod-net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.supa-auth.rule=Host(`auth.cabratech.cloud`)
+      - traefik.http.routers.supa-auth.entrypoints=http,https
+      - traefik.http.routers.supa-auth.service=supa-auth
+      - traefik.http.routers.supa-auth.tls=true
+      - traefik.http.routers.supa-auth.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-auth.middlewares=redirect-to-https
+      - traefik.http.services.supa-auth.loadbalancer.server.port=9999
 
   rest:
     image: postgrest/postgrest:v12.2.12
@@ -76,6 +85,15 @@ services:
       - "3003:3000"
     networks:
       - supabase-prod-net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.supa-api.rule=Host(`api.cabratech.cloud`)
+      - traefik.http.routers.supa-api.entrypoints=http,https
+      - traefik.http.routers.supa-api.service=supa-api
+      - traefik.http.routers.supa-api.tls=true
+      - traefik.http.routers.supa-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-api.middlewares=redirect-to-https
+      - traefik.http.services.supa-api.loadbalancer.server.port=3000
 
   meta:
     image: supabase/postgres-meta:v0.89.0
@@ -125,6 +143,15 @@ services:
       - "3002:3000"
     networks:
       - supabase-prod-net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.supa-studio.rule=Host(`studio.cabratech.cloud`)
+      - traefik.http.routers.supa-studio.entrypoints=http,https
+      - traefik.http.routers.supa-studio.service=supa-studio
+      - traefik.http.routers.supa-studio.tls=true
+      - traefik.http.routers.supa-studio.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-studio.middlewares=redirect-to-https
+      - traefik.http.services.supa-studio.loadbalancer.server.port=3000
 
 volumes:
   db-data:
