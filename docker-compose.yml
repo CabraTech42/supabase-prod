@@ -61,6 +61,16 @@ services:
       - supabase-prod-net
     labels:
       - traefik.enable=true
+      - traefik.docker.network=gyg7sosa0cexivvtqxvrojnu
+      - traefik.http.routers.supa-auth.rule=Host(`auth.cabratech.cloud`)
+      - traefik.http.routers.supa-auth.entrypoints=http,https
+      - traefik.http.routers.supa-auth.service=supa-auth
+      - traefik.http.routers.supa-auth.tls=true
+      - traefik.http.routers.supa-auth.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-auth.middlewares=supa-redirect
+      - traefik.http.services.supa-auth.loadbalancer.server.port=9999
+      - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
+      - traefik.enable=true
       - traefik.http.routers.supa-auth.rule=Host(`auth.cabratech.cloud`)
       - traefik.http.routers.supa-auth.entrypoints=http,https
       - traefik.http.routers.supa-auth.service=supa-auth
@@ -86,6 +96,16 @@ services:
     networks:
       - supabase-prod-net
     labels:
+      - traefik.enable=true
+      - traefik.docker.network=gyg7sosa0cexivvtqxvrojnu
+      - traefik.http.routers.supa-api.rule=Host(`api.cabratech.cloud`)
+      - traefik.http.routers.supa-api.entrypoints=http,https
+      - traefik.http.routers.supa-api.service=supa-api
+      - traefik.http.routers.supa-api.tls=true
+      - traefik.http.routers.supa-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-api.middlewares=supa-redirect
+      - traefik.http.services.supa-api.loadbalancer.server.port=3000
+      - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
       - traefik.enable=true
       - traefik.http.routers.supa-api.rule=Host(`api.cabratech.cloud`)
       - traefik.http.routers.supa-api.entrypoints=http,https
@@ -144,6 +164,16 @@ services:
     networks:
       - supabase-prod-net
     labels:
+      - traefik.enable=true
+      - traefik.docker.network=gyg7sosa0cexivvtqxvrojnu
+      - traefik.http.routers.supa-studio.rule=Host(`studio.cabratech.cloud`)
+      - traefik.http.routers.supa-studio.entrypoints=http,https
+      - traefik.http.routers.supa-studio.service=supa-studio
+      - traefik.http.routers.supa-studio.tls=true
+      - traefik.http.routers.supa-studio.tls.certresolver=letsencrypt
+      - traefik.http.routers.supa-studio.middlewares=supa-redirect
+      - traefik.http.services.supa-studio.loadbalancer.server.port=3000
+      - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
       - traefik.enable=true
       - traefik.http.routers.supa-studio.rule=Host(`studio.cabratech.cloud`)
       - traefik.http.routers.supa-studio.entrypoints=http,https
