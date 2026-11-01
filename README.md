@@ -55,5 +55,5 @@ ALTER USER pgbouncer WITH PASSWORD 'supabase';
 - `SERVICE_ROLE_KEY` - JWT service_role
 - `STUDIO_DEFAULT_ORGANIZATION` - "Xuxu Prod"
 - `STUDIO_DEFAULT_PROJECT` - "supabase-prod"
-- `STUDIO_BASIC_AUTH` - login do Studio no formato htpasswd: `htpasswd -nbB admin 'senha'`
-  (no Coolify, marque a variavel como literal: o hash tem `$`)
+- `STUDIO_BASIC_AUTH` - login do Studio no formato htpasswd: `htpasswd -nbs admin 'senha'`
+  (formato `{SHA}`, sem `$`: o Docker Compose trataria `$` do bcrypt como variavel)

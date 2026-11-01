@@ -175,10 +175,11 @@ services:
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 127.0.0.1:8001
-    # kong.yml e um template: substitui $$SUPABASE_ANON_KEY/$$SUPABASE_SERVICE_KEY antes de subir
-    entrypoint: sh -c 'eval "echo \"$$(cat /kong/kong.tpl.yml)\"" > /tmp/kong.yml && exec /docker-entrypoint.sh kong docker-start'
+    # kong.yml e um template: o script troca os marcadores pelas chaves antes de subir
+    entrypoint: ["/bin/sh", "/kong/kong-entrypoint.sh"]
     volumes:
       - ./kong.yml:/kong/kong.tpl.yml:ro
+      - ./kong-entrypoint.sh:/kong/kong-entrypoint.sh:ro
     networks:
       - supabase-prod-net
     labels:

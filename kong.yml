@@ -1,9 +1,8 @@
 # Kong - API gateway do Supabase (self-hosted)
 #
-# Este arquivo e um TEMPLATE: na subida do container as variaveis
-# $SUPABASE_ANON_KEY e $SUPABASE_SERVICE_KEY sao substituidas (ver entrypoint
-# do servico kong no docker-compose.yml). Por isso: nada de aspas duplas nem
-# crases aqui dentro.
+# Este arquivo e um TEMPLATE: na subida do container, kong-entrypoint.sh troca
+# os marcadores das chaves (consumers abaixo) pelas variaveis ANON_KEY e
+# SERVICE_ROLE_KEY do servico.
 #
 # Autenticacao (igual ao kong.yml oficial do Supabase):
 #   - todo pedido precisa do header apikey com a ANON_KEY ou a SERVICE_ROLE_KEY
