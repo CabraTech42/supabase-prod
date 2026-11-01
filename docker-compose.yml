@@ -42,7 +42,8 @@ services:
       GOTRUE_SITE_URL: ${SITE_URL}
       GOTRUE_JWT_SECRET: ${JWT_SECRET}
       GOTRUE_API_EXTERNAL_URL: ${API_EXTERNAL_URL}
-      GOTRUE_DISABLE_SIGNUP: "false"
+      # Cadastro fechado: contas novas so pelo Studio ou pela API admin (service_role)
+      GOTRUE_DISABLE_SIGNUP: "true"
       GOTRUE_EXTERNAL_EMAIL_ENABLED: "false"
       GOTRUE_MAILER_AUTOCONFIRM: "true"
       API_EXTERNAL_URL: ${API_EXTERNAL_URL}
@@ -50,7 +51,7 @@ services:
       DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
       SITE_URL: ${SITE_URL}
       JWT_SECRET: ${JWT_SECRET}
-      DISABLE_SIGNUP: "false"
+      DISABLE_SIGNUP: "true"
       MAILER_AUTOCONFIRM: "true"
       SMTP_HOST: ""
       SMTP_PORT: ""
