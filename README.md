@@ -2,11 +2,20 @@
 
 Setup completo do Supabase para produção.
 
-## Portas
+## Portas (somente 127.0.0.1 no servidor: use tunel SSH)
 - 5433 - Postgres
 - 9998 - Auth (GoTrue)
 - 3002 - Studio (UI Admin)
 - 3003 - REST (PostgREST)
+
+Ex.: `ssh -L 3002:127.0.0.1:3002 root@<servidor>` e abra http://localhost:3002
+
+## Acesso publico (Traefik)
+- `api.cabratech.cloud` - Kong. Todo pedido exige o header `apikey` (ANON_KEY ou
+  SERVICE_ROLE_KEY; o supabase-js envia sozinho). `/pg` (postgres-meta) so aceita
+  a SERVICE_ROLE_KEY.
+- `studio.cabratech.cloud` - Studio, atras de Basic Auth (`STUDIO_BASIC_AUTH`).
+- `auth.cabratech.cloud` - GoTrue direto.
 
 ## Stack
 - DB: supabase/postgres:15.19.0.004
@@ -46,3 +55,5 @@ ALTER USER pgbouncer WITH PASSWORD 'supabase';
 - `SERVICE_ROLE_KEY` - JWT service_role
 - `STUDIO_DEFAULT_ORGANIZATION` - "Xuxu Prod"
 - `STUDIO_DEFAULT_PROJECT` - "supabase-prod"
+- `STUDIO_BASIC_AUTH` - login do Studio no formato htpasswd: `htpasswd -nbB admin 'senha'`
+  (no Coolify, marque a variavel como literal: o hash tem `$`)

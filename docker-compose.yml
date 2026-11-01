@@ -1,6 +1,6 @@
 version: "3.8"
 
-# Supabase PROD (portas: 5433/9998/3003/3002)
+# Supabase PROD (portas 5433/9998/3003/3002 so em 127.0.0.1: acesso por tunel SSH)
 # Para Coolify: use 00-create-roles.sql + scripts OFICIAIS no initdb.d
 
 services:
@@ -59,7 +59,7 @@ services:
       SMTP_ADMIN_EMAIL: ""
       SMTP_SENDER_NAME: ""
     ports:
-      - "9998:9999"
+      - "127.0.0.1:9998:9999"
     networks:
       - supabase-prod-net
     labels:
@@ -86,7 +86,7 @@ services:
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${JWT_SECRET}
     ports:
-      - "3003:3000"
+      - "127.0.0.1:3003:3000"
     networks:
       - supabase-prod-net
     labels:
@@ -138,7 +138,7 @@ services:
       SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
       AUTH_JWT_SECRET: ${JWT_SECRET}
     ports:
-      - "3002:3000"
+      - "127.0.0.1:3002:3000"
     networks:
       - supabase-prod-net
     labels:
@@ -149,7 +149,9 @@ services:
       - traefik.http.routers.supa-studio.service=supa-studio
       - traefik.http.routers.supa-studio.tls=true
       - traefik.http.routers.supa-studio.tls.certresolver=letsencrypt
-      - traefik.http.routers.supa-studio.middlewares=supa-redirect
+      - traefik.http.routers.supa-studio.middlewares=supa-redirect,supa-studio-auth
+      # Login do Studio: STUDIO_BASIC_AUTH no formato htpasswd (usuario:hash bcrypt)
+      - traefik.http.middlewares.supa-studio-auth.basicauth.users=${STUDIO_BASIC_AUTH:?defina STUDIO_BASIC_AUTH (htpasswd)}
       - traefik.http.services.supa-studio.loadbalancer.server.port=3000
       - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
   kong:
@@ -165,13 +167,18 @@ services:
         condition: service_started
     environment:
       KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl
+      SUPABASE_ANON_KEY: ${ANON_KEY:?defina ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY:?defina SERVICE_ROLE_KEY}
       KONG_DNS_ORDER: LAST,A,CNAME
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+    # kong.yml e um template: substitui $$SUPABASE_ANON_KEY/$$SUPABASE_SERVICE_KEY antes de subir
+    entrypoint: sh -c 'eval "echo \"$$(cat /kong/kong.tpl.yml)\"" > /tmp/kong.yml && exec /docker-entrypoint.sh kong docker-start'
     volumes:
-      - ./kong.yml:/kong/kong.yml:ro
+      - ./kong.yml:/kong/kong.tpl.yml:ro
     networks:
       - supabase-prod-net
     labels:
@@ -192,14 +199,3 @@ volumes:
 networks:
   supabase-prod-net:
     driver: bridge
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=gyg7sosa0cexivvtqxvrojnu
-      - traefik.http.routers.supa-studio.rule=Host(`studio.cabratech.cloud`)
-      - traefik.http.routers.supa-studio.entrypoints=http,https
-      - traefik.http.routers.supa-studio.service=supa-studio
-      - traefik.http.routers.supa-studio.tls=true
-      - traefik.http.routers.supa-studio.tls.certresolver=letsencrypt
-      - traefik.http.routers.supa-studio.middlewares=supa-redirect
-      - traefik.http.services.supa-studio.loadbalancer.server.port=3000
-      - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
