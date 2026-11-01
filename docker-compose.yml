@@ -155,7 +155,8 @@ services:
       - traefik.http.services.supa-studio.loadbalancer.server.port=3000
       - traefik.http.middlewares.supa-redirect.redirectscheme.scheme=https
   kong:
-    image: kong:3.9
+    # imagem propria (kong/Dockerfile) com o kong.yml embutido
+    build: ./kong
     container_name: supabase-${COOLIFY_RESOURCE_UUID:-prod}-kong
     restart: unless-stopped
     depends_on:
@@ -172,106 +173,10 @@ services:
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 127.0.0.1:8001
-      # Configuracao do Kong aqui mesmo (e nao num arquivo montado: o Coolify guarda
-      # arquivos montados como File Mount e nao os atualiza pelo git).
-      # Igual ao kong.yml oficial do Supabase: todo pedido exige o header apikey
-      # (ANON_KEY ou SERVICE_ROLE_KEY); /pg (postgres-meta) so aceita a SERVICE_ROLE_KEY;
-      # /auth/v1/verify, /callback e /authorize ficam abertos (links de e-mail e OAuth).
-      KONG_DECLARATIVE_CONFIG_STRING: |
-        _format_version: '3.0'
-        _transform: true
-        consumers:
-          - username: anon
-            keyauth_credentials:
-              - key: ${ANON_KEY:?defina ANON_KEY}
-          - username: service_role
-            keyauth_credentials:
-              - key: ${SERVICE_ROLE_KEY:?defina SERVICE_ROLE_KEY}
-        acls:
-          - consumer: anon
-            group: anon
-          - consumer: service_role
-            group: admin
-        services:
-          - name: auth-v1-open
-            url: http://auth:9999/verify
-            routes:
-              - name: auth-v1-open
-                strip_path: true
-                paths:
-                  - /auth/v1/verify
-            plugins:
-              - name: cors
-          - name: auth-v1-open-callback
-            url: http://auth:9999/callback
-            routes:
-              - name: auth-v1-open-callback
-                strip_path: true
-                paths:
-                  - /auth/v1/callback
-            plugins:
-              - name: cors
-          - name: auth-v1-open-authorize
-            url: http://auth:9999/authorize
-            routes:
-              - name: auth-v1-open-authorize
-                strip_path: true
-                paths:
-                  - /auth/v1/authorize
-            plugins:
-              - name: cors
-          - name: auth-v1
-            url: http://auth:9999/
-            routes:
-              - name: auth-v1-all
-                strip_path: true
-                paths:
-                  - /auth/v1/
-            plugins:
-              - name: cors
-              - name: key-auth
-                config:
-                  hide_credentials: false
-              - name: acl
-                config:
-                  hide_groups_header: true
-                  allow:
-                    - admin
-                    - anon
-          - name: rest-v1
-            url: http://rest:3000/
-            routes:
-              - name: rest-v1-all
-                strip_path: true
-                paths:
-                  - /rest/v1/
-            plugins:
-              - name: cors
-              - name: key-auth
-                config:
-                  hide_credentials: true
-              - name: acl
-                config:
-                  hide_groups_header: true
-                  allow:
-                    - admin
-                    - anon
-          - name: meta
-            url: http://meta:8080/
-            routes:
-              - name: meta-all
-                strip_path: true
-                paths:
-                  - /pg/
-            plugins:
-              - name: key-auth
-                config:
-                  hide_credentials: false
-              - name: acl
-                config:
-                  hide_groups_header: true
-                  allow:
-                    - admin
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
+      # Chaves que kong/entrypoint.sh coloca no kong.yml (key-auth)
+      SUPABASE_ANON_KEY: ${ANON_KEY:?defina ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY:?defina SERVICE_ROLE_KEY}
     networks:
       - supabase-prod-net
     labels:
